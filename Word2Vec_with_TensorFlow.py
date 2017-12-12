@@ -24,10 +24,12 @@ class config:
         self.stopwords = stopwords.words("english")
         for mark in special_marks:
             self.stopwords.append(mark)
-        self.vocabulary_size = 200
+        self.vocabulary_size = 1000 
         if platform.system() == "Linux":
-            self.filename = os.getcwd() + "/Data/LoR_new"
+            print('OS = Linux')
+            self.filename = os.getcwd() + "/Data/text8"
         else:
+            print('OS = Windows')
             self.filename = os.getcwd() + "\\data\\LoR_new"
         self.batch_size = 12
         self.embedding_size = 128  # Dimension of the embedding vector.
@@ -92,19 +94,20 @@ class w2v_model():
         i = 0
         #words is all word from training data with lenth 17005207
         #dictionary is a dict with length 50000
-#        for word in words:
-#            if word in dictionary:
-#                index = dictionary[word]
-#            else:
-#                index = 0  # dictionary['UNK']
-#                unk_count += 1
-#            data.append(index) #storing index of dictionary
-        try:
-            index = dictionary[word]
-        except KeyError:
-            index = 0
-            unk_count += 1
+        for word in words:
+            if word in dictionary:
+                index = dictionary[word]
+            else:
+                index = 0  # dictionary['UNK']
+                unk_count += 1
+            data.append(index) #storing index of dictionary
+#        try:
+#            index = dictionary[word]
+#        except KeyError:
+#            index = 0
+#            unk_count += 1
         #before assignment, count[0][1] = -1
+#            data.append(index) #storing index of dictionary
         #after assigment, count[0][1] = 418391
         count[0][1] = unk_count
         reversed_dictionary = dict(zip(dictionary.values(), dictionary.keys()))
@@ -121,13 +124,9 @@ class w2v_model():
         batch = np.ndarray(shape=(batch_size), dtype=np.int32)
         labels = np.ndarray(shape=(batch_size, 1), dtype=np.int32)
         span = 2 * skip_window + 1  # [ skip_window target skip_window ]
-        print(span)
-        print(skip_window)
-        print('Length data ', len(data))
         buffer = collections.deque(maxlen=span)
         if data_index + span > len(data):
             data_index = 0
-        print('Data index', data_index)
         buffer.extend(data[data_index:data_index + span]) #copy data to buffer
         data_index += span
         for i in range(batch_size // num_skips):
@@ -161,13 +160,17 @@ def test_w2v():
         model = w2v_model()
         num_steps = 1000
         vocabulary = model.read_data()
-        data,count, dictionary, reverse_dictionary = model.build_dataset(vocabulary)
-        del vocabulary #reduce memory
-        print('Most common words', count[:5])
-        print('Sample data',data[:10], [reverse_dictionary[i] for i in data[:10]])
+#        data,count, dictionary, reverse_dictionary = model.build_dataset(vocabulary)
+#        del vocabulary #reduce memory
+#        print('Most common words', count[:5])
+#        print('Sample data',data[:10], [reverse_dictionary[i] for i in data[:10]])
         with tf.Session() as sess:
             sess.run(init)
+            data,count, dictionary, reverse_dictionary = model.build_dataset(vocabulary)
+            del vocabulary #reduce memory
             print("Initialized!")
+            print('Most common words', count[:5])
+            print('Sample data',data[:10], [reverse_dictionary[i] for i in data[:10]])
             average_loss = 0
             for step in xrange(num_steps):
                 batch_inputs, batch_labels = model.generate_batch(data)
